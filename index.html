@@ -86,7 +86,14 @@
         /* === MAIN LAYOUT === */
         .main-content { width: 100%; min-height: 100vh; padding: 15px; display: flex; justify-content: center; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
         .main-content.shifted { transform: translateX(280px); }
-        .app-container { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 20px; }
+        .app-container { 
+            width: 100%; 
+            max-width: 900px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            margin: 0 auto;
+        }
 
         /* === SEPARATED HEADER LAYOUT === */
         .header-wrapper { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
@@ -147,8 +154,15 @@
         .alarm-dot { position: absolute; top: 6px; left: 6px; font-size: 12px; }
 
         /* === SUMMARY & EXPORT === */
-        .summary-card { background: var(--card-bg); padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px var(--cell-shadow); margin-top: 20px; }
-        .summary-row { display: flex; justify-content: space-between; font-size: 18px; font-weight: 600; margin-bottom: 20px; padding: 0 10px; }
+.summary-card { 
+    background: var(--card-bg); 
+    padding: 15px 20px; 
+    border-radius: 16px; 
+    box-shadow: 0 4px 20px var(--cell-shadow); 
+    margin-top: 10px; /* Reduced from 20px */
+}
+
+    .summary-row { display: flex; justify-content: space-between; font-size: 18px; font-weight: 600; margin-bottom: 20px; padding: 0 10px; }
         .export-btn { background-color: #2E7D32; color: white; border: none; padding: 18px; border-radius: 50px; font-size: 18px; font-weight: 700; cursor: pointer; width: 100%; transition: transform 0.2s, background-color 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3); touch-action: manipulation; }
         .export-btn:active { transform: scale(0.98); background-color: #1B5E20; }
 
@@ -259,6 +273,72 @@
             .mini-tick-icon { width: 16px; height: 16px; }
             .swipe-container { display: flex; align-items: center; padding-top: 0; overflow: hidden; }
         }
+            /* === MAIN SWIPE ANIMATION === */
+        #calendarGrid {
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform;
+        }
+        
+        /* Today Button in Header */
+                /* Today Button */
+        .today-btn {
+            background: var(--pill-bg);
+            color: var(--text-color);
+            border: none;
+            border-radius: 50px;
+            padding: 0 16px;
+            height: 44px;
+            font-weight: 600;
+            font-size: 16px;
+            margin-right: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+        }
+        .today-btn:active { background-color: var(--hover-bg); transform: scale(0.96); }
+                /* === MODERN YEAR SELECTOR OVERLAY === */
+        .year-item {
+            padding: 16px 5px;
+            text-align: center;
+            background: transparent; /* Removed the ugly gray boxes */
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .year-item:active { transform: scale(0.92); background: var(--hover-bg); }
+        
+        /* The glowing blue active pill */
+        .year-item.active-year { 
+            background: var(--google-blue); 
+            color: #ffffff; 
+            font-weight: 700;
+            box-shadow: 0 8px 16px rgba(26, 115, 232, 0.35); /* Soft glowing shadow */
+            transform: scale(1.05); /* Pops out slightly */
+        }
+        
+        #yearList {
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); /* 3 columns for elegance */
+            gap: 12px; 
+            overflow-y: auto; 
+            max-height: 50vh; 
+            padding: 15px 10px;
+            margin-bottom: 15px;
+            -webkit-overflow-scrolling: touch; /* Smooth native iOS scrolling */
+            
+            /* Magic fade-out effect at top and bottom */
+            mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%); 
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+        }
+        
+        /* Hide the clunky scrollbar completely */
+        #yearList::-webkit-scrollbar { display: none; }
+
     </style>
 </head>
 <body>
@@ -280,7 +360,7 @@
         </div>
     </div>
 
-    <div class="main-content" id="mainContent">
+        <div class="main-content" id="mainContent">
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
         
         <div class="app-container">
@@ -291,8 +371,11 @@
                 </button>
                 <div class="header-content-box">
                     <div class="app-title-pill">My Calendar</div>
-                    <button class="month-year-btn" id="monthYearBtn" onclick="openYearView()">Feb 2026</button>
-                </div>
+                    <div style="display: flex; align-items: center;">
+                        <button class="today-btn" id="todayBtn" onclick="goToToday()">Today</button>
+                        <button class="month-year-btn" id="monthYearBtn" onclick="openYearView()">Feb 2026</button>
+                    </div>
+                </div> 
             </div>
 
             <div class="calendar-grid" id="calendarGrid"></div>
@@ -310,8 +393,19 @@
 
         </div> 
     </div>
-        <div class="modal-overlay" id="modal">
-        <div class="modal-content" id="modalContent">
+
+        <div class="modal-overlay" id="yearSelectorModal" style="z-index: 5000;">
+        <div class="modal-content" style="max-width: 400px;">
+            <h3 style="margin-bottom: 15px;">Jump to Year</h3>
+            <div id="yearList"></div>
+            <button class="cancel-btn" onclick="closeYearSelector()">Cancel</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+    
+            
+    <div class="modal-content" id="modalContent">
             <div class="drag-handle"></div>
             <h3>Mark Date</h3>
             <div class="input-group">
@@ -340,11 +434,13 @@
     </div>
 
 
-    <div class="year-view-modal" id="yearViewModal">
+        <div class="year-view-modal" id="yearViewModal">
         <div class="year-view-header">
-            <div class="year-title" id="yearViewTitle">2026</div>
+                        <div class="year-title" id="yearViewTitle" onclick="openYearSelector()" style="cursor: pointer;">2026 ▾</div>
+
             <div class="close-year-btn" onclick="closeYearView()">✕</div>
         </div>
+
         
         <div class="swipe-container" id="swipeContainer">
             <div class="months-grid" id="monthsGrid"></div>
@@ -398,7 +494,7 @@
             }
         }
 
-        function init() {
+               function init() {
             loadSavedData();
             themeToggle.addEventListener('change', handleThemeToggle);
             render();
@@ -406,7 +502,87 @@
             setupSwipe();
             setupDesktopWheel();
             setupModalSwipe();
+            setupMainSwipe(); // <-- We added this!
         }
+
+        // --- NEW MAIN GRID SWIPE FEATURES ---
+
+        function goToToday() {
+            let today = new Date();
+            currentMonth = today.getMonth();
+            currentYear = today.getFullYear();
+            render();
+        }
+
+        function setupMainSwipe() {
+            let mainTouchStart = 0;
+            let mainTouchEnd = 0;
+
+            grid.addEventListener('touchstart', e => {
+                mainTouchStart = e.changedTouches[0].screenX;
+            }, {passive: true});
+
+            grid.addEventListener('touchend', e => {
+                mainTouchEnd = e.changedTouches[0].screenX;
+                handleMainSwipe();
+            }, {passive: true});
+
+            function handleMainSwipe() {
+                const diff = mainTouchStart - mainTouchEnd;
+                if (Math.abs(diff) > 60) {
+                    if (diff > 0) animateMainMonth(1);  // Swipe Left -> Next Month
+                    else animateMainMonth(-1);         // Swipe Right -> Prev Month
+                }
+            }
+        }
+        let isMainAnimating = false;
+
+        function animateMainMonth(direction) {
+            if (isMainAnimating) return;
+            isMainAnimating = true;
+
+            // 1. Clone the current grid before changing data
+            const clone = grid.cloneNode(true);
+            const rect = grid.getBoundingClientRect();
+            clone.style.position = 'absolute';
+            clone.style.top = rect.top + window.scrollY + 'px';
+            clone.style.left = rect.left + window.scrollX + 'px';
+            clone.style.width = rect.width + 'px';
+            clone.style.margin = '0';
+            clone.style.zIndex = '5';
+            document.body.appendChild(clone);
+
+            // 2. Update the actual grid to the new month
+            currentMonth += direction;
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            else if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+            render(); 
+
+            // 3. Prepare the new grid off-screen
+            const slideOffset = window.innerWidth;
+            grid.style.transition = 'none';
+            grid.style.transform = `translate3d(${direction * slideOffset}px, 0, 0)`;
+            
+            void grid.offsetWidth; // Force the browser to register the new position
+
+            // 4. Slide both grids simultaneously
+            const animSpeed = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
+            grid.style.transition = animSpeed;
+            clone.style.transition = animSpeed;
+
+            grid.style.transform = `translate3d(0, 0, 0)`;
+            clone.style.transform = `translate3d(${-direction * slideOffset}px, 0, 0)`;
+
+            // 5. Cleanup after animation finishes
+            setTimeout(() => {
+                clone.remove();
+                grid.style.transition = 'none';
+                isMainAnimating = false;
+            }, 350);
+        }
+
+        
+
 
         function handleThemeToggle(e) {
             if (e.target.checked) {
@@ -446,8 +622,7 @@
             if (touchEndX < touchStartX - 60) animateSwipe(1);
             if (touchEndX > touchStartX + 60) animateSwipe(-1);
         }
-
-        let isAnimating = false;
+                let isAnimating = false;
         function animateSwipe(direction) {
             if(isAnimating) return;
             isAnimating = true;
@@ -465,7 +640,7 @@
 
             const slideOffset = window.innerWidth;
             currentGrid.style.transition = "none";
-            currentGrid.style.transform = `translateX(${direction * slideOffset}px, 0, 0)`; 
+            currentGrid.style.transform = `translate3d(${direction * slideOffset}px, 0, 0)`; 
             
             void currentGrid.offsetWidth; // Trigger reflow
 
@@ -473,8 +648,8 @@
             currentGrid.style.transition = animationSpeed;
             clone.style.transition = animationSpeed;
 
-            currentGrid.style.transform = `translateX(0px, 0, 0)`;
-            clone.style.transform = `translateX(${-direction * slideOffset}px, 0, 0)`;
+            currentGrid.style.transform = `translate3d(0px, 0, 0)`;
+            clone.style.transform = `translate3d(${-direction * slideOffset}px, 0, 0)`;
 
             setTimeout(() => {
                 clone.remove();
@@ -482,6 +657,43 @@
                 isAnimating = false;
             }, 400);
         }
+
+        // --- YEAR SELECTOR LOGIC ---
+        const yearSelectorModal = document.getElementById("yearSelectorModal");
+        const yearList = document.getElementById("yearList");
+
+        function openYearSelector() {
+            yearList.innerHTML = "";
+            for (let y = 2000; y <= 2050; y++) {
+                let btn = document.createElement("div");
+                btn.className = "year-item";
+                if (y === modalYear) btn.classList.add("active-year");
+                btn.innerText = y;
+                btn.onclick = () => {
+                    modalYear = y;
+                    updateYearView(); 
+                    closeYearSelector();
+                };
+                yearList.appendChild(btn);
+            }
+            
+            yearSelectorModal.style.display = "flex";
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    yearSelectorModal.classList.add("visible");
+                    const activeBtn = yearList.querySelector(".active-year");
+                    if(activeBtn) activeBtn.scrollIntoView({ block: "center", behavior: "instant" });
+                });
+            });
+        }
+
+        function closeYearSelector() {
+            yearSelectorModal.classList.remove("visible");
+            setTimeout(() => { yearSelectorModal.style.display = "none"; }, 300);
+        }
+
+
+        
 
         function openYearView() {
             modalYear = currentYear; 
@@ -575,6 +787,15 @@
         function render() {
             monthYearBtn.innerText = `${monthNamesShort[currentMonth]} ${currentYear}`;
             grid.innerHTML = "";
+            // --- NEW: Hide/Show Today Button Logic ---
+            const todayBtn = document.getElementById("todayBtn");
+            let realToday = new Date();
+            if (currentMonth === realToday.getMonth() && currentYear === realToday.getFullYear()) {
+                todayBtn.style.display = "none";
+            } else {
+                todayBtn.style.display = "inline-flex";
+            }
+            // -----------------------------------------
             let firstDay = new Date(currentYear, currentMonth, 1).getDay();
             let daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             let todayDate = new Date();
@@ -682,7 +903,6 @@
         function saveMark(status) {
             if (navigator.vibrate) navigator.vibrate(50); 
             
-            if (status === 'clear') delete markedData[activeDateKey];
             if (status === 'clear') delete markedData[activeDateKey];
             else {
                 markedData[activeDateKey] = {
